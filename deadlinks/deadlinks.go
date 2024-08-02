@@ -54,7 +54,7 @@ Options:
 
 	args := flag.Args()
 	if len(args) == 0 {
-		die("Insufficient args. Try %s --help", Z)
+		Die("Insufficient args. Try %s --help", Z)
 	}
 
 	opt := walk.Options{
@@ -86,7 +86,7 @@ Options:
 		wg.Done()
 	}(out)
 
-	errs := walk.WalkFunc(args, &opt, func(res walk.Result) error {
+	err := walk.WalkFunc(args, &opt, func(res walk.Result) error {
 		// we know nm is a symlink; we read the link and eval it
 		nm := res.Path
 		_, err := filepath.EvalSymlinks(nm)
@@ -100,12 +100,8 @@ Options:
 		return nil
 	})
 
-	if len(errs) > 0 {
-		var s strings.Builder
-		for _, v := range errs {
-			s.WriteString(fmt.Sprintf("%w\n", v))
-		}
-		die("%s", s.String())
+	if err != nil {
+		Die("%s", err)
 	}
 
 	close(out)
@@ -113,23 +109,6 @@ Options:
 	if dead.Len() > 0 {
 		fmt.Printf(dead.String())
 	}
-}
-
-// die with error
-func die(f string, v ...interface{}) {
-	warn(f, v...)
-	os.Exit(1)
-}
-
-func warn(f string, v ...interface{}) {
-	z := fmt.Sprintf("%s: %s", os.Args[0], f)
-	s := fmt.Sprintf(z, v...)
-	if n := len(s); s[n-1] != '\n' {
-		s += "\n"
-	}
-
-	os.Stderr.WriteString(s)
-	os.Stderr.Sync()
 }
 
 // This will be filled in by "build"

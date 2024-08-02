@@ -66,7 +66,7 @@ Options:
 	}
 
 	dups := xsync.NewMapOf[string, *[]string]()
-	errs := walk.WalkFunc(args, &opt, func(res walk.Result) error {
+	err := walk.WalkFunc(args, &opt, func(res walk.Result) error {
 		nm := res.Path
 		cs, err := checksum(nm)
 		if err != nil {
@@ -80,12 +80,8 @@ Options:
 		return nil
 	})
 
-	if len(errs) > 0 {
-		s := []string{}
-		for _, v := range errs {
-			s = append(s, fmt.Sprintf("%w", v))
-		}
-		Die("%s", strings.Join(s, "\n"))
+	if err != nil {
+		Die("%s", err)
 	}
 
 	dups.Range(func(k string, pv *[]string) bool {

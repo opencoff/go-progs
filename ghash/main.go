@@ -136,7 +136,8 @@ func main() {
 		fd.Close()
 	}(ch, fd, &wg)
 
-	var errs []error
+	var err error
+
 	switch recurse {
 	case true:
 		opt := walk.Options{
@@ -145,20 +146,23 @@ func main() {
 			Type:           walk.FILE,
 		}
 
-		errs = walk.WalkFunc(args, &opt, action)
+		err = walk.WalkFunc(args, &opt, action)
 
 	case false:
-		errs = processArgs(args, follow, action)
+		err = processArgs(args, follow, action)
 	}
 
 	close(ch)
 
-	for i := range errs {
-		fmt.Fprintf(os.Stderr, "%s\n", errs[i])
+	if err != nil {
+		Warn("%s", err)
 	}
 
 	wg.Wait()
-	Exit(1 & len(errs))
+	if err != nil {
+		Exit(1)
+	}
+	Exit(0)
 }
 
 func printHashes() {

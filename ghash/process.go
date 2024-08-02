@@ -14,6 +14,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,7 +30,7 @@ const _parallelism int = 2
 var nWorkers = runtime.NumCPU() * _parallelism
 
 // iterate over the names
-func processArgs(args []string, followSymlinks bool, apply func(r walk.Result) error) []error {
+func processArgs(args []string, followSymlinks bool, apply func(r walk.Result) error) error {
 	nw := nWorkers
 	if len(args) < nw {
 		nw = len(args)
@@ -94,16 +95,20 @@ func processArgs(args []string, followSymlinks bool, apply func(r walk.Result) e
 	}(ch, errch)
 
 	// now start workers and process entries
-	var errs []error
 	var wrkWait, errWait sync.WaitGroup
+	var err error
 
 	errWait.Add(1)
-	go func(ch chan error) {
+	go func(e *error, ch chan error) {
+		var errs []error
 		for err := range ch {
 			errs = append(errs, err)
 		}
+		if len(errs) > 0 {
+			*e = errors.Join(errs...)
+		}
 		errWait.Done()
-	}(errch)
+	}(&err, errch)
 
 	wrkWait.Add(nw)
 	for i := 0; i < nw; i++ {
@@ -122,7 +127,7 @@ func processArgs(args []string, followSymlinks bool, apply func(r walk.Result) e
 	close(errch)
 	errWait.Wait()
 
-	return errs
+	return err
 }
 
 type symlinkResolver struct {
