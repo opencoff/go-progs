@@ -9,6 +9,7 @@ import (
 	"hash"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/opencoff/go-mmap"
@@ -37,7 +38,11 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Printf(
-			`%s - find duplicate files in one or more dirs
+			`%s - find duplicate files in one or more dirs.
+
+Files that have the same strong-hash (blake3) are considered to be
+identical. The names of the identical files are sorted on modification
+time - with the most recent file at the top.
 
 Usage: %s [options] dir [dir...]
 
@@ -65,7 +70,7 @@ Options:
 		Excludes:       ignores,
 	}
 
-	dups := xsync.NewMapOf[string, *[]string]()
+	dups := xsync.NewMapOf[string, *[]walk.Result]()
 	err := walk.WalkFunc(args, &opt, func(res walk.Result) error {
 		nm := res.Path
 		cs, err := checksum(nm)
@@ -74,9 +79,9 @@ Options:
 		}
 
 		sum := fmt.Sprintf("%x", cs)
-		empty := []string{}
+		empty := []walk.Result{}
 		x, _ := dups.LoadOrStore(sum, &empty)
-		*x = append(*x, nm)
+		*x = append(*x, res)
 		return nil
 	})
 
@@ -84,24 +89,37 @@ Options:
 		Die("%s", err)
 	}
 
-	dups.Range(func(k string, pv *[]string) bool {
+	dups.Range(func(k string, pv *[]walk.Result) bool {
 		v := *pv
 		if len(v) < 2 {
 			return true
 		}
 
+		sort.Sort(byMtime(v))
+
 		fmt.Printf("\n# %s\n", k)
 		if shell {
-			fmt.Printf("# rm -f '%s'\n", v[0])
-			for i := 1; i < len(v); i++ {
-				fmt.Printf("rm -f '%s'\n", v[i])
+			fmt.Printf("# rm -f '%s'\n", v[0].Path)
+			for _, r := range v[1:] {
+				fmt.Printf("rm -f '%s'\n", r.Path)
 			}
 		} else {
-			fmt.Printf("    %s\n", strings.Join(v, "\n    "))
+			fmt.Printf("    %s\n", names(v))
 		}
 
 		return true
 	})
+}
+
+func names(v []walk.Result) string {
+	var b strings.Builder
+
+	b.WriteString(v[0].Path)
+	for _, r := range v[1:] {
+		b.WriteString("\n    ")
+		b.WriteString(r.Path)
+	}
+	return b.String()
 }
 
 // create a new cryptographic hash func
@@ -131,6 +149,25 @@ func checksum(fn string) ([]byte, error) {
 	})
 
 	return h.Sum(nil)[:], err
+}
+
+type byMtime []walk.Result
+
+func (r byMtime) Len() int {
+	return len(r)
+}
+
+func (r byMtime) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
+}
+
+func (r byMtime) Less(i, j int) bool {
+	a, b := r[i].Stat, r[j].Stat
+
+	x := a.ModTime().Compare(b.ModTime())
+
+	// we want to keep the most recent mtime at the top.
+	return x > 0
 }
 
 // This will be filled in by "build"
