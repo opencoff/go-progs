@@ -54,7 +54,7 @@ Options:
 
 	flag.Parse()
 	if version {
-		fmt.Printf("%s - %s [%s; %s]\n", Z, ProductVersion, RepoVersion, Buildtime)
+		fmt.Printf("%s - %s [%s]\n", Z, ProductVersion, RepoVersion)
 		os.Exit(0)
 	}
 
@@ -371,7 +371,6 @@ func write(fn string, wr io.Writer, b []byte) error {
 
 // This will be filled in by "build"
 var RepoVersion string = "UNDEFINED"
-var Buildtime string = "UNDEFINED"
 var ProductVersion string = "UNDEFINED"
 
 // vim: ft=go:sw=4:ts=4:noexpandtab:tw=78:

@@ -10,13 +10,16 @@ import (
 	flag "github.com/opencoff/pflag"
 	"net"
 	"os"
+	"path"
 	"strings"
 )
 
 var V6, HW, Sh, All bool
 
 func main() {
+	var version bool
 
+	flag.BoolVarP(&version, "version", "", false, "Show version info and quit")
 	flag.BoolVarP(&V6, "ipv6", "6", false, "Show IPv6 address")
 	flag.BoolVarP(&HW, "mac", "m", false, "Show MAC address")
 	flag.BoolVarP(&Sh, "shell", "s", false, "Export shell vars (sh/ksh/bash)")
@@ -31,6 +34,11 @@ func main() {
 	var ifs []string
 
 	flag.Parse()
+	if version {
+		fmt.Printf("%s - %s [%s]\n", Z, ProductVersion, RepoVersion)
+		os.Exit(0)
+	}
+
 	args := flag.Args()
 	if len(args) > 0 {
 		for _, nm := range args {
@@ -136,3 +144,10 @@ func warn(f string, v ...interface{}) {
 	os.Stderr.WriteString(s)
 	os.Stderr.Sync()
 }
+
+// This will be filled in by "build"
+var RepoVersion string = "UNDEFINED"
+var ProductVersion string = "UNDEFINED"
+var Z string = path.Base(os.Args[0])
+
+// vim: ft=go:sw=4:ts=4:noexpandtab:tw=78:
