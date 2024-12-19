@@ -13,7 +13,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/opencoff/go-walk"
+	"github.com/opencoff/go-fio"
+	"github.com/opencoff/go-fio/walk"
 	flag "github.com/opencoff/pflag"
 )
 
@@ -86,9 +87,9 @@ Options:
 		wg.Done()
 	}(out)
 
-	err := walk.WalkFunc(args, &opt, func(res walk.Result) error {
+	err := walk.WalkFunc(args, opt, func(fi *fio.Info) error {
 		// we know nm is a symlink; we read the link and eval it
-		nm := res.Path
+		nm := fi.Name()
 		_, err := filepath.EvalSymlinks(nm)
 		if err != nil {
 			targ, err := os.Readlink(nm)

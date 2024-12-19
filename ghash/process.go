@@ -19,9 +19,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"syscall"
 
-	"github.com/opencoff/go-walk"
+	"github.com/opencoff/go-fio"
 	"runtime"
 )
 
@@ -30,24 +29,21 @@ const _parallelism int = 2
 var nWorkers = runtime.NumCPU() * _parallelism
 
 // iterate over the names
-func processArgs(args []string, followSymlinks bool, apply func(r walk.Result) error) error {
+func processArgs(args []string, followSymlinks bool, apply func(*fio.Info) error) error {
 	nw := nWorkers
 	if len(args) < nw {
 		nw = len(args)
 	}
 
-	ch := make(chan walk.Result, nWorkers)
+	ch := make(chan *fio.Info, nWorkers)
 	errch := make(chan error, 1)
 
 	// iterate in the background and feed the workers
-	go func(ch chan walk.Result, errch chan error) {
+	go func(ch chan *fio.Info, errch chan error) {
 		var sr symlinkResolver
 
 		for _, nm := range args {
-			var fi os.FileInfo
-			var err error
-
-			fi, err = os.Lstat(nm)
+			fi, err := fio.Lstat(nm)
 			if err != nil {
 				errch <- fmt.Errorf("lstat %s: %w", nm, err)
 				continue
@@ -85,7 +81,7 @@ func processArgs(args []string, followSymlinks bool, apply func(r walk.Result) e
 				errch <- fmt.Errorf("skipping dir %s..", nm)
 
 			case m.IsRegular():
-				ch <- walk.Result{Path: nm, Stat: fi}
+				ch <- fi
 
 			default:
 				errch <- fmt.Errorf("skipping non-file %s..", nm)
@@ -112,7 +108,7 @@ func processArgs(args []string, followSymlinks bool, apply func(r walk.Result) e
 
 	wrkWait.Add(nw)
 	for i := 0; i < nw; i++ {
-		go func(in chan walk.Result, errch chan error) {
+		go func(in chan *fio.Info, errch chan error) {
 			for r := range in {
 				err := apply(r)
 				if err != nil {
@@ -134,7 +130,7 @@ type symlinkResolver struct {
 	seen sync.Map
 }
 
-func (s *symlinkResolver) resolve(nm string, fi os.FileInfo) (string, os.FileInfo, error) {
+func (s *symlinkResolver) resolve(nm string, fi *fio.Info) (string, *fio.Info, error) {
 	newnm, err := filepath.EvalSymlinks(nm)
 	if err != nil {
 		return "", nil, fmt.Errorf("%s: %w", nm, err)
@@ -142,7 +138,7 @@ func (s *symlinkResolver) resolve(nm string, fi os.FileInfo) (string, os.FileInf
 	nm = newnm
 
 	// we know this is no longer a symlink
-	fi, err = os.Stat(nm)
+	fi, err = fio.Stat(nm)
 	if err != nil {
 		return "", nil, fmt.Errorf("stat %s: %w", nm, err)
 	}
@@ -155,34 +151,21 @@ func (s *symlinkResolver) resolve(nm string, fi os.FileInfo) (string, os.FileInf
 	return nm, fi, nil
 }
 
-func (s *symlinkResolver) track(nm string, fi os.FileInfo, errch chan error) {
-	st, ok := fi.Sys().(*syscall.Stat_t)
-	if !ok {
-		errch <- fmt.Errorf("%s: can't read stat from FileInfo", nm)
-		return
-	}
-
-	key := fmt.Sprintf("%d:%d:%d", st.Dev, st.Rdev, st.Ino)
-	_, ok = s.seen.LoadOrStore(key, st)
+func (s *symlinkResolver) track(nm string, fi *fio.Info, errch chan error) {
+	key := fmt.Sprintf("%d:%d:%d", fi.Dev, fi.Rdev, fi.Ino)
+	s.seen.LoadOrStore(key, fi)
 }
 
 // track this inode to detect loops; return true if we've seen it before
 // false otherwise.
-func (s *symlinkResolver) isEntrySeen(nm string, fi os.FileInfo) bool {
-	st, ok := fi.Sys().(*syscall.Stat_t)
+func (s *symlinkResolver) isEntrySeen(nm string, fi *fio.Info) bool {
+	key := fmt.Sprintf("%d:%d:%d", fi.Dev, fi.Rdev, fi.Ino)
+	x, ok := s.seen.LoadOrStore(key, fi)
 	if !ok {
 		return false
 	}
 
-	key := fmt.Sprintf("%d:%d:%d", st.Dev, st.Rdev, st.Ino)
-	x, ok := s.seen.LoadOrStore(key, st)
-	if !ok {
-		return false
-	}
+	xt := x.(*fio.Info)
 
-	// This can't fail because we checked it above before storing in the
-	// sync.Map
-	xt := x.(*syscall.Stat_t)
-
-	return xt.Dev == st.Dev && xt.Rdev == st.Rdev && xt.Ino == st.Ino
+	return xt.Dev == fi.Dev && fi.Rdev == fi.Rdev && fi.Ino == fi.Ino
 }

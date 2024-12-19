@@ -12,8 +12,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/opencoff/go-fio"
+	"github.com/opencoff/go-fio/walk"
 	"github.com/opencoff/go-mmap"
-	"github.com/opencoff/go-walk"
 	flag "github.com/opencoff/pflag"
 	"github.com/puzpuzpuz/xsync/v3"
 	"github.com/zeebo/blake3"
@@ -70,18 +71,18 @@ Options:
 		Excludes:       ignores,
 	}
 
-	dups := xsync.NewMapOf[string, *[]walk.Result]()
-	err := walk.WalkFunc(args, &opt, func(res walk.Result) error {
-		nm := res.Path
+	dups := xsync.NewMapOf[string, *[]*fio.Info]()
+	err := walk.WalkFunc(args, opt, func(fi *fio.Info) error {
+		nm := fi.Name()
 		cs, err := checksum(nm)
 		if err != nil {
 			return err
 		}
 
 		sum := fmt.Sprintf("%x", cs)
-		empty := []walk.Result{}
+		empty := []*fio.Info{}
 		x, _ := dups.LoadOrStore(sum, &empty)
-		*x = append(*x, res)
+		*x = append(*x, fi)
 		return nil
 	})
 
@@ -89,7 +90,7 @@ Options:
 		Die("%s", err)
 	}
 
-	dups.Range(func(k string, pv *[]walk.Result) bool {
+	dups.Range(func(k string, pv *[]*fio.Info) bool {
 		v := *pv
 		if len(v) < 2 {
 			return true
@@ -99,9 +100,9 @@ Options:
 
 		fmt.Printf("\n# %s\n", k)
 		if shell {
-			fmt.Printf("# rm -f '%s'\n", v[0].Path)
+			fmt.Printf("# rm -f '%s'\n", v[0].Name())
 			for _, r := range v[1:] {
-				fmt.Printf("rm -f '%s'\n", r.Path)
+				fmt.Printf("rm -f '%s'\n", r.Name())
 			}
 		} else {
 			fmt.Printf("    %s\n", names(v))
@@ -111,13 +112,13 @@ Options:
 	})
 }
 
-func names(v []walk.Result) string {
+func names(v []*fio.Info) string {
 	var b strings.Builder
 
-	b.WriteString(v[0].Path)
+	b.WriteString(v[0].Name())
 	for _, r := range v[1:] {
 		b.WriteString("\n    ")
-		b.WriteString(r.Path)
+		b.WriteString(r.Name())
 	}
 	return b.String()
 }
@@ -151,7 +152,7 @@ func checksum(fn string) ([]byte, error) {
 	return h.Sum(nil)[:], err
 }
 
-type byMtime []walk.Result
+type byMtime []*fio.Info
 
 func (r byMtime) Len() int {
 	return len(r)
@@ -162,7 +163,7 @@ func (r byMtime) Swap(i, j int) {
 }
 
 func (r byMtime) Less(i, j int) bool {
-	a, b := r[i].Stat, r[j].Stat
+	a, b := r[i], r[j]
 
 	x := a.ModTime().Compare(b.ModTime())
 

@@ -14,8 +14,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/opencoff/go-fio"
 	"github.com/opencoff/go-mmap"
-	"github.com/opencoff/go-utils"
 	flag "github.com/opencoff/pflag"
 )
 
@@ -66,7 +66,7 @@ Options:
 	var wr io.WriteCloser = os.Stdout
 
 	if len(out) > 0 && out != "-" {
-		wfd, err := utils.NewSafeFile(out, 0, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+		wfd, err := fio.NewSafeFile(out, 0, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
 			Die("can't create %s: %s", out, err)
 		}

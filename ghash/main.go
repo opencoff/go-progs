@@ -20,8 +20,8 @@ import (
 	"path"
 	"sync"
 
-	"github.com/opencoff/go-utils"
-	"github.com/opencoff/go-walk"
+	"github.com/opencoff/go-fio"
+	"github.com/opencoff/go-fio/walk"
 	flag "github.com/opencoff/pflag"
 
 	"crypto/sha256"
@@ -97,9 +97,9 @@ func main() {
 	if len(output) > 0 {
 		var opt uint32
 		if force {
-			opt |= utils.OPT_OVERWRITE
+			opt |= fio.OPT_OVERWRITE
 		}
-		fx, err := utils.NewSafeFile(output, opt, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		fx, err := fio.NewSafeFile(output, opt, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
 			Die("%s", err)
 		}
@@ -113,13 +113,14 @@ func main() {
 
 	var wg sync.WaitGroup
 	ch := make(chan otuple, 16)
-	action := func(r walk.Result) error {
-		sum, sz, err := hashFile(r.Path, h)
+	action := func(fi *fio.Info) error {
+		nm := fi.Name()
+		sum, sz, err := hashFile(nm, h)
 		if err != nil {
 			return err
 		}
 
-		ch <- otuple{r.Path, sz, sum}
+		ch <- otuple{nm, sz, sum}
 		return nil
 	}
 
@@ -146,7 +147,7 @@ func main() {
 			Type:           walk.FILE,
 		}
 
-		err = walk.WalkFunc(args, &opt, action)
+		err = walk.WalkFunc(args, opt, action)
 
 	case false:
 		err = processArgs(args, follow, action)

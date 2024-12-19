@@ -30,7 +30,7 @@ $(tooldir):
 clean:
 	-rm -rf ./bin
 
-gofmt: $(gofmt)
+fmt gofmt: $(gofmt)
 
 $(gofmt):
 	(cd $(basename $@) && gofmt -w -s *.go)

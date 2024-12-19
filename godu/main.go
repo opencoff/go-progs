@@ -20,10 +20,9 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"syscall"
 
+	"github.com/opencoff/go-fio/walk"
 	"github.com/opencoff/go-utils"
-	"github.com/opencoff/go-walk"
 	flag "github.com/opencoff/pflag"
 )
 
@@ -115,32 +114,15 @@ Options:
 	// finds the longest match
 	sort.Sort(byLen(args))
 
-	opt := &walk.Options{
+	opt := walk.Options{
 		FollowSymlinks: symlinks,
 		OneFS:          onefs,
 		Type:           walk.FILE,
 		Excludes:       excludes,
-	}
 
-	// We know this function will be called from a single threaded
-	// context; so we can use a regular map and not sync.Map
-	linkmap := make(map[string]string)
-	hardlinked := func(fi os.FileInfo, nm string) bool {
-		st, ok := fi.Sys().(*syscall.Stat_t)
-		if !ok {
-			return false
-		}
-		if st.Nlink == 1 {
-			return false
-		}
-
-		key := fmt.Sprintf("%d:%d:%d", st.Dev, st.Rdev, st.Ino)
-		if _, ok := linkmap[key]; ok {
-			return true
-		}
-
-		linkmap[key] = nm
-		return false
+		// We want to count file sizes only once. So, we'll ignore
+		// hardlinked files.
+		IgnoreDuplicateInode: true,
 	}
 
 	ch, ech := walk.Walk(args, opt)
@@ -159,22 +141,18 @@ Options:
 	// now harvest results - we know we will only get files and their info.
 	res := make([]result, 0, 1024)
 	sizes := make(map[string]uint64)
-	for r := range ch {
-		// don't count hardlinks
-		if hardlinked(r.Stat, r.Path) {
-			continue
-		}
-
-		sz := uint64(r.Stat.Size())
+	for fi := range ch {
+		fn := fi.Name()
+		sz := uint64(fi.Size())
 		for i := range args {
 			nm := args[i]
-			if strings.HasPrefix(r.Path, nm) {
+			if strings.HasPrefix(fn, nm) {
 				sizes[nm] += sz
 				break
 			}
 		}
 		if all {
-			res = append(res, result{r.Path, sz})
+			res = append(res, result{fn, sz})
 		}
 	}
 
