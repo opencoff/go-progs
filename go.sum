@@ -1,11 +1,11 @@
 github.com/klauspost/cpuid/v2 v2.0.12 h1:p9dKCg8i4gmOxtv35DvrYoWqYzQrvEVdjQ762Y0OqZE=
 github.com/klauspost/cpuid/v2 v2.0.12/go.mod h1:g2LTdtYhdyuGPqyWyv7qRAmj1WBqxuObKfj5c0PQa7c=
-github.com/opencoff/go-fio v0.5.7 h1:0meYV1C0vCWJYmnkivCJ+0ydWmTqjWPWO/CRoAJWSMM=
-github.com/opencoff/go-fio v0.5.7/go.mod h1:iXfyUCgT/U1rr2Lz9ZIODyRpdFFJtkOlbsO6rhgfxyQ=
+github.com/opencoff/go-fio v0.5.8 h1:vvLS+HSVhMGGYzer35VCW3hc3XNxhJ6MKtq+LNLSsMM=
+github.com/opencoff/go-fio v0.5.8/go.mod h1:iXfyUCgT/U1rr2Lz9ZIODyRpdFFJtkOlbsO6rhgfxyQ=
 github.com/opencoff/go-mmap v0.1.5 h1:RKPtevC4mOW5bi9skBPPo4nFTIH4lVWAL20Tff+FjLg=
 github.com/opencoff/go-mmap v0.1.5/go.mod h1:y/6Jk/tDUc00k3oSQpiJX++20Nw7xFSlc5kLkhGnRXw=
-github.com/opencoff/go-utils v1.0.1 h1:3Ibx2DQP+nQiany99sDVSgVvtyYaErpBrUjCRhZFnIs=
-github.com/opencoff/go-utils v1.0.1/go.mod h1:kh14Pqqe/QYGRph7ue4GWzLrlTOW8O/728qsuDFygeI=
+github.com/opencoff/go-utils v1.0.2 h1:BANRL8ZxgHpuo8gQBAzT3M9Im3aNFhaWW28jhc86LNs=
+github.com/opencoff/go-utils v1.0.2/go.mod h1:eZkEVQVzNfuE8uGepyhscMsqcXq7liGbBHYYwgYaoy8=
 github.com/opencoff/pflag v1.0.6-sh2 h1:Vw3VuG7Z2Cmpev4U3mB16qXYP20RHoxCAlxPOPSpDJU=
 github.com/opencoff/pflag v1.0.6-sh2/go.mod h1:2bXtpAD/5h/2LarkbsRwiUxqnvB1nZBzn9Xjad1P41A=
 github.com/pkg/xattr v0.4.10 h1:Qe0mtiNFHQZ296vRgUjRCoPHPqH7VdTOrZx3g0T+pGA=
