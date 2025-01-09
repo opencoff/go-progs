@@ -114,7 +114,7 @@ func main() {
 	var wg sync.WaitGroup
 	ch := make(chan otuple, 16)
 	action := func(fi *fio.Info) error {
-		nm := fi.Name()
+		nm := fi.Path()
 		sum, sz, err := hashFile(nm, h)
 		if err != nil {
 			return err

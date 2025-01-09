@@ -89,7 +89,7 @@ Options:
 
 	err := walk.WalkFunc(args, opt, func(fi *fio.Info) error {
 		// we know nm is a symlink; we read the link and eval it
-		nm := fi.Name()
+		nm := fi.Path()
 		_, err := filepath.EvalSymlinks(nm)
 		if err != nil {
 			targ, err := os.Readlink(nm)

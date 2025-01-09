@@ -73,7 +73,7 @@ Options:
 
 	dups := xsync.NewMapOf[string, *[]*fio.Info]()
 	err := walk.WalkFunc(args, opt, func(fi *fio.Info) error {
-		nm := fi.Name()
+		nm := fi.Path()
 		cs, err := checksum(nm)
 		if err != nil {
 			return err
@@ -100,9 +100,9 @@ Options:
 
 		fmt.Printf("\n# %s\n", k)
 		if shell {
-			fmt.Printf("# rm -f '%s'\n", v[0].Name())
+			fmt.Printf("# rm -f '%s'\n", v[0].Path())
 			for _, r := range v[1:] {
-				fmt.Printf("rm -f '%s'\n", r.Name())
+				fmt.Printf("rm -f '%s'\n", r.Path())
 			}
 		} else {
 			fmt.Printf("    %s\n", names(v))
@@ -115,10 +115,10 @@ Options:
 func names(v []*fio.Info) string {
 	var b strings.Builder
 
-	b.WriteString(v[0].Name())
+	b.WriteString(v[0].Path())
 	for _, r := range v[1:] {
 		b.WriteString("\n    ")
-		b.WriteString(r.Name())
+		b.WriteString(r.Path())
 	}
 	return b.String()
 }

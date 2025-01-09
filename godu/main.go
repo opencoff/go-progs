@@ -142,7 +142,7 @@ Options:
 	res := make([]result, 0, 1024)
 	sizes := make(map[string]uint64)
 	for fi := range ch {
-		fn := fi.Name()
+		fn := fi.Path()
 		sz := uint64(fi.Size())
 		for i := range args {
 			nm := args[i]
