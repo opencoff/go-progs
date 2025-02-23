@@ -26,10 +26,10 @@ import (
 
 	"crypto/sha256"
 	"crypto/sha512"
+	"crypto/sha3"
 	"github.com/zeebo/blake3"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/blake2s"
-	"golang.org/x/crypto/sha3"
 	"hash"
 )
 
