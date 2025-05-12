@@ -410,6 +410,8 @@ vflag=""
 
 [ $Verbose -gt 0 ] && vflag="-v"
 
+pahole_flags='-gcflags=all="-N -l"'
+
 case $Tool in
     test)
         set -- $args
@@ -454,7 +456,7 @@ case $Tool in
             fi
 
             echo "   $dir: $out .. "
-            $e eval $Go build $vflag -trimpath -buildvcs=false -o $Outdir/$out $isuffix "$ldflags" ./$dir || exit 1
+            $e eval $Go build $vflag $pahole_flags -trimpath -buildvcs=false -o $Outdir/$out $isuffix "$ldflags" ./$dir || exit 1
         done
         ;;
 esac
