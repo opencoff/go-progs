@@ -11,6 +11,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"runtime"
 
 	"github.com/opencoff/go-fio"
 	"github.com/opencoff/go-fio/walk"
@@ -70,6 +71,9 @@ Options:
 		Type:           walk.FILE,
 		Excludes:       ignores,
 	}
+
+	// maximize concurrency
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	dups := xsync.NewMapOf[string, *[]*fio.Info]()
 	err := walk.WalkFunc(args, opt, func(fi *fio.Info) error {

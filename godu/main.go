@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"runtime"
 
 	"github.com/opencoff/go-fio/walk"
 	"github.com/opencoff/go-utils"
@@ -114,7 +115,11 @@ Options:
 	// finds the longest match
 	sort.Sort(byLen(args))
 
+	// maximize concurrency
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	opt := walk.Options{
+		Concurrency:	runtime.NumCPU() / 2,
 		FollowSymlinks: symlinks,
 		OneFS:          onefs,
 		Type:           walk.FILE,
@@ -157,10 +162,6 @@ Options:
 	}
 
 	wg.Wait()
-	if len(errs) > 0 {
-		die("%s", strings.Join(errs, "\n"))
-	}
-
 	if !all {
 		for k, v := range sizes {
 			res = append(res, result{k, v})
@@ -178,6 +179,11 @@ Options:
 	if total {
 		fmt.Printf("%12s TOTAL\n", size(tot))
 	}
+
+	if len(errs) > 0 {
+		die("%s", strings.Join(errs, "\n"))
+	}
+
 }
 
 type byLen []string

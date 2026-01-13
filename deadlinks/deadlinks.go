@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"runtime"
 
 	"github.com/opencoff/go-fio"
 	"github.com/opencoff/go-fio/walk"
@@ -72,6 +73,9 @@ Options:
 	if zero {
 		sep = "\000"
 	}
+
+	// maximize concurrency
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	wg.Add(1)
 	go func(ch chan Result) {

@@ -19,6 +19,7 @@ import (
 	"os"
 	"path"
 	"sync"
+	"runtime"
 
 	"github.com/opencoff/go-fio"
 	"github.com/opencoff/go-fio/walk"
@@ -110,6 +111,9 @@ func main() {
 	}
 
 	fmt.Fprintf(fd, "%s %s %s\n", MAGIC, halgo, ProductVersion)
+
+	// maximize concurrency
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var wg sync.WaitGroup
 	ch := make(chan otuple, 16)
