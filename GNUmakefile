@@ -1,5 +1,5 @@
 
-progs = ifaddr finddup deadlinks hexlify ghash godu
+progs = ifaddr hexlify
 arch := $(shell ./build --print-arch)
 bindir = ./bin/$(arch)
 
